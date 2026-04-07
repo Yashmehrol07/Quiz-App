@@ -172,11 +172,21 @@ const fetchAIQuestions = async () => {
     for (const url of endpoints) {
       try {
         console.log(`Quiz Attempt: ${url}`);
-        const response = await fetch(`${url}?key=${API_KEY}`, {
+        let response = await fetch(`${url}?key=${API_KEY}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
         });
+
+        // Handle Overload
+        if (!response.ok && (response.status === 503 || response.status === 429)) {
+          console.warn(`Retrying ${url} after 1.5s...`);
+          await new Promise(r => setTimeout(r, 1500));
+          response = await fetch(`${url}?key=${API_KEY}`, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+          });
+        }
 
         const data = await response.json();
         if (!response.ok) throw new Error(data.error?.message || "Model failed");

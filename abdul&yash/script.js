@@ -83,15 +83,26 @@ const generateResponse = async (botMsgDiv) => {
     for (const url of endpoints) {
       try {
         console.log(`Chatbot Attempt: ${url}`);
-        const response = await fetch(`${url}?key=${API_KEY}`, {
+        let response = await fetch(`${url}?key=${API_KEY}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ contents: chatHistory }),
           signal: controller.signal,
         });
 
+        // Handle High Demand (503/429) gracefully with a retry
+        if (!response.ok && (response.status === 503 || response.status === 429)) {
+          console.warn(`Model busy: ${url}. Retrying in 1.5s...`);
+          textElement.innerHTML = `<span style="color:#1d7efd; font-size:0.8rem;"><i class="fa-solid fa-hourglass-half"></i> AI is busy, trying Lite version...</span>`;
+          await new Promise(r => setTimeout(r, 1500));
+          response = await fetch(`${url}?key=${API_KEY}`, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ contents: chatHistory }), signal: controller.signal,
+          });
+        }
+
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error.message);
+        if (!response.ok) throw new Error(data.error?.message || "Model failed");
 
         const responseText = data.candidates[0].content.parts[0].text.replace(/\*\*([^*]+)\*\*/g, "$1").trim();
         typingEffect(responseText, textElement, botMsgDiv);
@@ -106,9 +117,10 @@ const generateResponse = async (botMsgDiv) => {
     }
     if (!success) throw lastError || new Error("All chat models failed");
   } catch (error) {
+    const isHighDemand = error.message.toLowerCase().includes("high demand") || error.message.toLowerCase().includes("overloaded");
     const errorHTML = `<div style="background: rgba(242, 55, 35, 0.1); padding: 15px; border-radius: 12px; border-left: 5px solid #F23723; margin-top: 5px;">
-                          <p style="color: #F23723; font-weight: 600; margin-bottom: 5px;"><i class="fa-solid fa-circle-exclamation"></i> AI Mentor is taking a break!</p>
-                          <p style="font-size: 0.85rem; color: #a2aac2;">${error.message.includes("not found") ? "This model is currently unavailable in your region. We are switching to a stable version." : error.message}</p>
+                          <p style="color: #F23723; font-weight: 600; margin-bottom: 5px;"><i class="fa-solid fa-circle-exclamation"></i> ${isHighDemand ? "AI Mentor is heavily busy!" : "AI Mentor is taking a break!"}</p>
+                          <p style="font-size: 0.85rem; color: #a2aac2;">${isHighDemand ? "All elite models are currently under heavy load globally. Please wait 10 seconds and try again." : error.message}</p>
                         </div>`;
     textElement.innerHTML = errorHTML;
     botMsgDiv.classList.remove("loading");
