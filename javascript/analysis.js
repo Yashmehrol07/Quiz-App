@@ -22,7 +22,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             <h3 style="margin-bottom: 10px;">Q${i + 1}: ${q.question}</h3>
             <p style="color: #a2aac2; margin-bottom: 5px;">Your Answer: <span style="color:${q.isCorrect ? '#16AE56' : '#F23723'}; font-weight:600;">${q.selected}</span></p>
             ${!q.isCorrect ? `<p style="color: #a2aac2;">Correct Answer: <span style="color:#16AE56; font-weight:600;">${q.correctAnswer}</span></p>` : ''}
-            ${!q.isCorrect ? `<div class="ai-explanation" id="ai-exp-${i}"><i class="fa-solid fa-spinner fa-spin"></i> Waiting for AI explanation...</div>` : `<div class="ai-explanation" style="background: rgba(22, 174, 86, 0.1); color: #16AE56;"><i class="fa-solid fa-check-circle"></i> Correct! Great job.</div>`}
+            <div class="ai-explanation" id="ai-exp-${i}">
+                ${q.isCorrect ? `<div style="color: #16AE56;"><i class="fa-solid fa-check-circle"></i> Correct! Great job.</div>` : `<i class="fa-solid fa-spinner fa-spin"></i> Waiting for AI explanation...`}
+            </div>
+            ${!q.isCorrect ? `<button onclick="speakText('ai-exp-${i}')" style="background:none; border:none; color:#1d7efd; cursor:pointer; font-size:0.8rem; margin-top:5px; display:flex; align-items:center; gap:5px;"><i class="fa-solid fa-volume-high"></i> Listen to Explanation</button>` : ''}
         `;
         questionsContainer.appendChild(div);
 
