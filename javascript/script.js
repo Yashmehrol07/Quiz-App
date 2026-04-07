@@ -79,7 +79,12 @@ const handleAnswer = (option, answerIndex) => {
   disableSelection = true;
   const isCorrect = currentQuestion.correctAnswer === answerIndex;
   option.classList.add(isCorrect ? "correct" : "incorrect");
-  !isCorrect ? highlightCorrectAnswer() : correctAnswersCount++;
+  if (!isCorrect) {
+    localStorage.setItem("doubt_question", currentQuestion.question);
+    highlightCorrectAnswer();
+  } else {
+    correctAnswersCount++;
+  }
   // Insert icon based on correctness
   const iconHTML = `<span class="material-symbols-rounded"> ${isCorrect ? "check_circle" : "cancel"} </span>`;
   option.insertAdjacentHTML("beforeend", iconHTML);

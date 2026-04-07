@@ -6,12 +6,24 @@ const fileInput = promptForm.querySelector("#file-input");
 const fileUploadWrapper = promptForm.querySelector(".file-upload-wrapper");
 const themeToggleBtn = document.querySelector("#theme-toggle-btn");
 // API Setup
-let API_KEY = localStorage.getItem("gemini_api_key");
-if (!API_KEY) {
-  API_KEY = prompt("Please enter your Gemini API Key to use the chatbot:", "");
-  if (API_KEY) localStorage.setItem("gemini_api_key", API_KEY);
+let API_KEY = typeof CONFIG !== 'undefined' ? CONFIG.GEMINI_API_KEY : "";
+if (!API_KEY || API_KEY === "PASTE_YOUR_API_KEY_HERE") {
+  API_KEY = localStorage.getItem("gemini_api_key");
+  if (!API_KEY) {
+    API_KEY = prompt("Please enter your Gemini API Key to use the AbdulYash AI Mentor:", "");
+    if (API_KEY) localStorage.setItem("gemini_api_key", API_KEY);
+  }
 }
 const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+
+// Doubt Question Bridge
+window.addEventListener("DOMContentLoaded", () => {
+  const doubtQ = localStorage.getItem("doubt_question");
+  if (doubtQ) {
+    promptInput.value = `I had a doubt on this question during the quiz: "${doubtQ}". Can you explain the correct answer to me?`;
+    localStorage.removeItem("doubt_question");
+  }
+});
 let controller, typingInterval;
 const chatHistory = [];
 const userData = { message: "", file: {} };
