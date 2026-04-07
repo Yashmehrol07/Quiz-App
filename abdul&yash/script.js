@@ -169,13 +169,6 @@ document.querySelector("#delete-chats-btn").addEventListener("click", () => {
   chatsContainer.innerHTML = "";
   document.body.classList.remove("chats-active", "bot-responding");
 });
-// Handle suggestions click
-document.querySelectorAll(".suggestions-item").forEach((suggestion) => {
-  suggestion.addEventListener("click", () => {
-    promptInput.value = suggestion.querySelector(".text").textContent;
-    promptForm.dispatchEvent(new Event("submit"));
-  });
-});
 // Show/hide controls for mobile on prompt input focus
 document.addEventListener("click", ({ target }) => {
   const wrapper = document.querySelector(".prompt-wrapper");
