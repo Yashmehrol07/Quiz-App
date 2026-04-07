@@ -89,3 +89,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 });
+
+window.speakText = (elementId) => {
+    const text = document.getElementById(elementId).innerText;
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.9;
+    window.speechSynthesis.cancel(); // Stop any current speech
+    window.speechSynthesis.speak(utterance);
+};

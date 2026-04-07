@@ -29,6 +29,12 @@ const showQuizResult = () => {
   const percentage = Math.round((correctAnswersCount / numberOfQuestions) * 100);
   const resultText = `<h2 style="margin-bottom:10px; color:#1d7efd;">Score: ${percentage}%</h2>You answered <b>${correctAnswersCount}</b> out of <b>${numberOfQuestions}</b> questions correctly.`;
   resultContainer.querySelector(".result-message").innerHTML = resultText;
+
+  // Save High Score
+  const savedBest = localStorage.getItem(`best_score_${quizCategory}`) || 0;
+  if (percentage > savedBest) {
+    localStorage.setItem(`best_score_${quizCategory}`, percentage);
+  }
 };
 // Clear and reset the timer
 const resetTimer = () => {
@@ -192,6 +198,17 @@ const fetchAIQuestions = async () => {
     startBtn.textContent = originalBtnText;
   }
 };
+// Render high scores in the configuration UI
+const updateBestScores = () => {
+  configContainer.querySelectorAll(".category-option").forEach(btn => {
+    const cat = btn.textContent.toLowerCase();
+    const best = localStorage.getItem(`best_score_${cat}`);
+    if (best) {
+      btn.innerHTML = `${btn.textContent} <span style="font-size:0.7rem; display:block; color:#1d7efd;">Best: ${best}%</span>`;
+    }
+  });
+};
+
 // Start the quiz and render the random question
 const startQuiz = async () => {
   // Update the quiz settings from UI
@@ -225,9 +242,12 @@ const resetQuiz = () => {
   sessionHistory = [];
   aiQuestions = [];
   isAIQuiz = false;
+  updateBestScores();
   document.querySelector(".config-popup").classList.add("active");
   document.querySelector(".result-popup").classList.remove("active");
 };
+
+updateBestScores();
 // Event listeners
 nextQuestionBtn.addEventListener("click", renderQuestion);
 resultContainer.querySelectorAll(".try-again-btn").forEach(btn => {
