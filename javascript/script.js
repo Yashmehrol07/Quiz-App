@@ -171,6 +171,7 @@ const fetchAIQuestions = async () => {
     let lastError = null;
     for (const url of endpoints) {
       try {
+        console.log(`Quiz Attempt: ${url}`);
         const response = await fetch(`${url}?key=${API_KEY}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },

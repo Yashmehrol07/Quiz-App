@@ -82,6 +82,7 @@ const generateResponse = async (botMsgDiv) => {
 
     for (const url of endpoints) {
       try {
+        console.log(`Chatbot Attempt: ${url}`);
         const response = await fetch(`${url}?key=${API_KEY}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
