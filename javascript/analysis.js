@@ -55,6 +55,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             for (const url of endpoints) {
                 try {
+                    console.log(`Attempting Analysis with: ${url}`);
                     const response = await fetch(`${url}?key=${API_KEY}`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
