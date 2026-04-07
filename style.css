@@ -11,9 +11,10 @@ body {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  
-  background-image: url(image/Quiz.jfif);
-  /* background-size: cover; */
+  padding: 15px;
+  background: linear-gradient(135deg, rgba(16,22,35,0.8), rgba(29,126,253,0.8)), url(image/Quiz.jfif);
+  background-size: cover;
+  background-position: center;
 }
 .popup-container {
   position: fixed;
@@ -256,6 +257,11 @@ body {
 
 /* Media query code for mobile screens */
 @media (max-width: 624px) {
+  .config-container,
+  .quiz-container,
+  .result-container {
+    width: 100%;
+  }
   .config-container,
   .quiz-container .quiz-content {
     padding: 20px;

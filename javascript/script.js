@@ -48,7 +48,13 @@ const startTimer = () => {
 };
 // Fetch a random question from based on the selected category
 const getRandomQuestion = () => {
-  const categoryQuestions = questions.find((cat) => cat.category.toLowerCase() === quizCategory.toLowerCase())?.questions || [];
+  const categoryQuestions = question.find((cat) => cat.category.toLowerCase() === quizCategory.toLowerCase())?.questions || [];
+
+  if (categoryQuestions.length === 0) {
+    alert("No questions found for this category!");
+    return null;
+  }
+
   // Show the results if all questions have been used
   if (questionsIndexHistory.length >= Math.min(numberOfQuestions, categoryQuestions.length)) {
     return showQuizResult();

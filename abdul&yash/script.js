@@ -6,6 +6,11 @@ const fileInput = promptForm.querySelector("#file-input");
 const fileUploadWrapper = promptForm.querySelector(".file-upload-wrapper");
 const themeToggleBtn = document.querySelector("#theme-toggle-btn");
 // API Setup
+let API_KEY = localStorage.getItem("gemini_api_key");
+if (!API_KEY) {
+  API_KEY = prompt("Please enter your Gemini API Key to use the chatbot:", "");
+  if (API_KEY) localStorage.setItem("gemini_api_key", API_KEY);
+}
 const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 let controller, typingInterval;
 const chatHistory = [];
