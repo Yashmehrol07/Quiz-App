@@ -166,6 +166,7 @@ body {
     margin-bottom: 20px;
     background: linear-gradient(to right, #ffffff, #a2aac2);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     line-height: 1.2;
 }
