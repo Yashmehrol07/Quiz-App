@@ -164,73 +164,8 @@ resultContainer.querySelectorAll(".try-again-btn").forEach(btn => {
 configContainer.querySelector(".start-quiz-btn").addEventListener("click", startQuiz);
 
 if (resultContainer.querySelector(".analysis-btn")) {
-  const analysisPopup = document.querySelector(".analysis-popup");
-  const aiInsightContent = document.getElementById("ai-insight-content");
-  const breakdownList = document.getElementById("question-breakdown-list");
-
-  resultContainer.querySelector(".analysis-btn").addEventListener("click", async () => {
-    // Open popup natively
-    document.querySelector(".result-popup").classList.remove("active");
-    analysisPopup.classList.add("active");
-
-    // Render breakdown list
-    breakdownList.innerHTML = "";
-    let wrongQuestionsText = "";
-
-    sessionHistory.forEach((item, index) => {
-      const isWrong = !item.isCorrect;
-      if (isWrong) {
-        wrongQuestionsText += `Q: ${item.question}\nCorrect: ${item.correctAnswer}\nUser chose: ${item.selected}\n\n`;
-      }
-
-      const div = document.createElement("div");
-      div.style.cssText = `padding: 15px; border-radius: 8px; border: 1px solid ${item.isCorrect ? '#16AE56' : '#F23723'}; background: rgba(255,255,255,0.05);`;
-      div.innerHTML = `
-                <p style="font-weight: 600; margin-bottom: 8px; color:#fff;">${index + 1}. ${item.question}</p>
-                <p style="font-size: 0.9rem; color: #a2aac2;">You selected: <span style="color: ${item.isCorrect ? '#16AE56' : '#F23723'}">${item.selected}</span></p>
-                ${!item.isCorrect ? `<p style="font-size: 0.9rem; color: #a2aac2;">Correct Answer: <span style="color: #16AE56">${item.correctAnswer}</span></p>` : ''}
-            `;
-      breakdownList.appendChild(div);
-    });
-
-    // Trigger Gemini API directly!
-    let API_KEY = typeof CONFIG !== 'undefined' ? CONFIG.GEMINI_API_KEY : "";
-    if (!API_KEY || API_KEY === "PASTE_YOUR_API_KEY_HERE") {
-      API_KEY = localStorage.getItem("gemini_api_key");
-    }
-
-    if (wrongQuestionsText === "") {
-      aiInsightContent.innerHTML = "Perfect score! You have no weak areas to analyze in this session. Incredible job!";
-    } else if (!API_KEY) {
-      aiInsightContent.innerHTML = "<em>API Key missing! Please add your Gemini key to config.js to see AI insights.</em>";
-    } else {
-      try {
-        aiInsightContent.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generating your personalized strategy with Gemini...`;
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${API_KEY}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{
-              role: "user",
-              parts: [{ text: `I am taking a quiz. Here are the questions I got wrong:\n\n${wrongQuestionsText}\n\nBased ONLY on these mistakes, provide a very concise analysis (3-4 sentences max) of my weak topics and give me 1 actionable strategy to improve.` }]
-            }]
-          })
-        });
-
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error.message || "Failed to fetch from Gemini");
-
-        let answer = data.candidates[0].content.parts[0].text;
-        answer = answer.replace(/\*\*(.*?)\*\*/g, '<b style="color:#fff;">$1</b>').replace(/\n/g, '<br>');
-        aiInsightContent.innerHTML = answer;
-      } catch (e) {
-        aiInsightContent.innerHTML = `<span style="color:#F23723">Failed to load AI Analysis: ${e.message}</span>`;
-      }
-    }
-  });
-
-  document.getElementById("close-analysis-btn")?.addEventListener("click", () => {
-    analysisPopup.classList.remove("active");
-    document.querySelector(".result-popup").classList.add("active");
+  resultContainer.querySelector(".analysis-btn").addEventListener("click", () => {
+    localStorage.setItem("quiz_analysis_report", JSON.stringify(sessionHistory));
+    window.location.href = "analysis.html";
   });
 }

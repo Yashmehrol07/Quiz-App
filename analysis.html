@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Analysis Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css" />
+    <script src="javascript/config.js"></script>
+    <style>
+        body {
+            padding: 40px;
+            align-items: flex-start;
+            justify-content: center;
+        }
+
+        .dashboard-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 40px;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 900px;
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.2);
+            margin: 0 auto;
+        }
+
+        .q-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 5px solid #1d7efd;
+        }
+
+        .q-card.correct {
+            border-left-color: #16AE56;
+        }
+
+        .q-card.incorrect {
+            border-left-color: #F23723;
+        }
+
+        .ai-explanation {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(29, 126, 253, 0.1);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            color: #c3cdde;
+            line-height: 1.5;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .try-again-btn {
+            background: #5145BA;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            color: #fff;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 20px 10px;
+            }
+
+            .dashboard-container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <h1 style="text-align:center; margin-bottom: 30px;"><i class="fa-solid fa-chart-line"
+                style="color:#ff9800; margin-right:10px;"></i>Detailed AI Performance Analysis</h1>
+
+        <div id="overall-insight" style="text-align:center; margin-bottom:40px; color:#a2aac2; font-size:1.1rem;">
+            <i class="fa-solid fa-spinner fa-spin"></i> Reading your answers & generating customized AI explanations for
+            each question...
+        </div>
+
+        <div id="questions-container">
+            <!-- Rendered by JS -->
+        </div>
+
+        <div class="nav-buttons">
+            <a href="quiz.html" class="try-again-btn"><i class="fa-solid fa-rotate-right"></i> Retake Quiz</a>
+            <a href="abdul&yash/index.html" class="try-again-btn" style="background:#1d7efd;"><i
+                    class="fa-solid fa-robot"></i> Go to AI Chatbot Mentor</a>
+            <a href="index.html" class="try-again-btn" style="background:#32313C;"><i class="fa-solid fa-house"></i>
+                Home</a>
+        </div>
+    </div>
+    <script src="javascript/analysis.js"></script>
+</body>
+
+</html>
