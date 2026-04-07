@@ -11,12 +11,15 @@ const QUIZ_TIME_LIMIT = 15;
 let currentTime = QUIZ_TIME_LIMIT;
 let timer = null;
 let quizCategory = "programming";
+let quizDifficulty = "easy";
 let numberOfQuestions = 10;
 let currentQuestion = null;
 const questionsIndexHistory = [];
 let correctAnswersCount = 0;
 let disableSelection = false;
 let sessionHistory = [];
+let aiQuestions = [];
+let isAIQuiz = false;
 
 // Display the quiz result and hide the quiz container
 const showQuizResult = () => {
@@ -55,9 +58,15 @@ const startTimer = () => {
     }
   }, 1000);
 };
-// Fetch a random question from based on the selected category
+// Fetch a random question based on the selected category or AI generated list
 const getRandomQuestion = () => {
-  const categoryQuestions = question.find((cat) => cat.category.toLowerCase() === quizCategory.toLowerCase())?.questions || [];
+  let categoryQuestions = [];
+
+  if (isAIQuiz && aiQuestions.length > 0) {
+    categoryQuestions = aiQuestions;
+  } else {
+    categoryQuestions = question.find((cat) => cat.category.toLowerCase() === quizCategory.toLowerCase())?.questions || [];
+  }
 
   if (categoryQuestions.length === 0) {
     alert("No questions found for this category!");
@@ -129,17 +138,80 @@ const renderQuestion = () => {
     li.addEventListener("click", () => handleAnswer(li, index));
   });
 };
+
+// Fetch questions from Gemini API
+const fetchAIQuestions = async () => {
+  const startBtn = configContainer.querySelector(".start-quiz-btn");
+  const originalBtnText = startBtn.textContent;
+
+  try {
+    startBtn.disabled = true;
+    startBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> AI is generating questions...`;
+
+    let API_KEY = typeof CONFIG !== 'undefined' ? CONFIG.GEMINI_API_KEY : "";
+    if (!API_KEY || API_KEY === "PASTE_YOUR_API_KEY_HERE") {
+      API_KEY = localStorage.getItem("gemini_api_key");
+    }
+
+    if (!API_KEY) throw new Error("No API Key found");
+
+    const promptText = `Generate ${numberOfQuestions} multiple choice questions about ${quizCategory} at ${quizDifficulty} difficulty level. 
+    Return the response ONLY as a JSON array of objects with the following structure: 
+    [{"question": "string", "options": ["opt1", "opt2", "opt3", "opt4"], "correctAnswer": 0}]. 
+    The correctAnswer should be the index (0-3) of the correct option.`;
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: promptText }] }]
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error?.message || "API request failed");
+
+    // Extract JSON from markdown response if Gemini wraps it in code blocks
+    let content = data.candidates[0].content.parts[0].text;
+    const jsonMatch = content.match(/\[[\s\S]*\]/);
+    if (jsonMatch) content = jsonMatch[0];
+
+    const questions = JSON.parse(content);
+    if (Array.isArray(questions) && questions.length > 0) {
+      aiQuestions = questions;
+      isAIQuiz = true;
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error("AI Generation Error:", error);
+    isAIQuiz = false; // Fallback to local
+    return false;
+  } finally {
+    startBtn.disabled = false;
+    startBtn.textContent = originalBtnText;
+  }
+};
 // Start the quiz and render the random question
-const startQuiz = () => {
-  document.querySelector(".config-popup").classList.remove("active");
-  document.querySelector(".quiz-popup").classList.add("active");
-  // Update the quiz category and number of questions
+const startQuiz = async () => {
+  // Update the quiz settings from UI
   quizCategory = configContainer.querySelector(".category-option.active").textContent;
   numberOfQuestions = parseInt(configContainer.querySelector(".question-option.active").textContent);
+  quizDifficulty = configContainer.querySelector(".difficulty-option.active").textContent;
+
+  // Try to generate AI questions first
+  const aiSuccess = await fetchAIQuestions();
+
+  if (!aiSuccess) {
+    console.log("Falling back to local questions...");
+  }
+
+  document.querySelector(".config-popup").classList.remove("active");
+  document.querySelector(".quiz-popup").classList.add("active");
   renderQuestion();
 };
-// Highlight the selected option on click - category or no. of question
-configContainer.querySelectorAll(".category-option, .question-option").forEach((option) => {
+// Highlight the selected option on click - category, no. of question, or difficulty
+configContainer.querySelectorAll(".category-option, .question-option, .difficulty-option").forEach((option) => {
   option.addEventListener("click", () => {
     option.parentNode.querySelector(".active").classList.remove("active");
     option.classList.add("active");
@@ -151,6 +223,8 @@ const resetQuiz = () => {
   correctAnswersCount = 0;
   questionsIndexHistory.length = 0;
   sessionHistory = [];
+  aiQuestions = [];
+  isAIQuiz = false;
   document.querySelector(".config-popup").classList.add("active");
   document.querySelector(".result-popup").classList.remove("active");
 };
