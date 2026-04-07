@@ -43,14 +43,25 @@
                     <i class="fa-solid fa-robot"></i> Ask AI Mentor
                 </a>
             </div>
-            <p id="ai-status-msg"
-                style="margin-top: 20px; font-size: 0.8rem; color: #a2aac2; cursor: pointer; text-decoration: underline;"
-                onclick="runAIDiagnostic()">💡 AI Connection Status: Check Now</p>
+            <div style="margin-top: 30px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                <p id="ai-status-msg"
+                    style="font-size: 0.8rem; color: #a2aac2; cursor: pointer; text-decoration: underline;"
+                    onclick="runAIDiagnostic()">💡 AI Connection Status: Check Now</p>
+                <p style="font-size: 0.8rem; color: #a2aac2; cursor: pointer; text-decoration: underline;"
+                    onclick="setApiKey()">🔑 Setup API Key (For Live Site)</p>
+            </div>
         </div>
     </main>
 
     <script src="javascript/config.js"></script>
     <script>
+        function setApiKey() {
+            const key = prompt("Enter your Gemini API Key for this live session:", localStorage.getItem("gemini_api_key") || "");
+            if (key) {
+                localStorage.setItem("gemini_api_key", key);
+                alert("✅ API Key saved to your browser! Deployment mode is ready.");
+            }
+        }
         async function runAIDiagnostic() {
             const msg = document.getElementById("ai-status-msg");
             msg.innerHTML = "⏳ Testing AI Endpoints... please wait.";
