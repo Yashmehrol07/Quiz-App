@@ -11,10 +11,23 @@ const themeToggleBtn = document.querySelector("#theme-toggle-btn");
 const API_KEY = typeof CONFIG !== 'undefined' ? CONFIG.GEMINI_API_KEY : "YOUR_KEY_HERE";
 const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 
-// Doubt Question Bridge
+// Advanced Knowledge Bridge
 window.addEventListener("DOMContentLoaded", () => {
+  const reportJSON = localStorage.getItem("quiz_analysis_report");
   const doubtQ = localStorage.getItem("doubt_question");
-  if (doubtQ) {
+
+  if (reportJSON) {
+    const report = JSON.parse(reportJSON);
+    let promptText = "I just completed a quiz! Can you provide a fantastic analysis of my performance and give me a study plan? Here are the detailed results of what I answered:\n\n";
+    report.forEach((q, i) => {
+      promptText += `Q${i + 1}: ${q.question}\n- Correct Answer: ${q.correctAnswer}\n- I Selected: ${q.selected}\n- Result: ${q.isCorrect ? "Right" : "Wrong"}\n\n`;
+    });
+    promptInput.value = promptText;
+    localStorage.removeItem("quiz_analysis_report");
+
+    // Auto submit the prompt!
+    setTimeout(() => promptForm.dispatchEvent(new Event("submit")), 600);
+  } else if (doubtQ) {
     promptInput.value = `I had a doubt on this question during the quiz: "${doubtQ}". Can you explain the correct answer to me?`;
     localStorage.removeItem("doubt_question");
   }

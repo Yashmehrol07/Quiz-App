@@ -16,12 +16,15 @@ let currentQuestion = null;
 const questionsIndexHistory = [];
 let correctAnswersCount = 0;
 let disableSelection = false;
+let sessionHistory = [];
+
 // Display the quiz result and hide the quiz container
 const showQuizResult = () => {
   clearInterval(timer);
   document.querySelector(".quiz-popup").classList.remove("active");
   document.querySelector(".result-popup").classList.add("active");
-  const resultText = `You answered <b>${correctAnswersCount}</b> out of <b>${numberOfQuestions}</b> questions correctly. Great effort!`;
+  const percentage = Math.round((correctAnswersCount / numberOfQuestions) * 100);
+  const resultText = `<h2 style="margin-bottom:10px; color:#1d7efd;">Score: ${percentage}%</h2>You answered <b>${correctAnswersCount}</b> out of <b>${numberOfQuestions}</b> questions correctly.`;
   resultContainer.querySelector(".result-message").innerHTML = resultText;
 };
 // Clear and reset the timer
@@ -38,6 +41,12 @@ const startTimer = () => {
     if (currentTime <= 0) {
       clearInterval(timer);
       disableSelection = true;
+      sessionHistory.push({
+        question: currentQuestion.question,
+        selected: "Time Out",
+        correctAnswer: currentQuestion.options[currentQuestion.correctAnswer],
+        isCorrect: false
+      });
       nextQuestionBtn.style.visibility = "visible";
       quizContainer.querySelector(".quiz-timer").style.background = "#c31402";
       highlightCorrectAnswer();
@@ -79,6 +88,12 @@ const handleAnswer = (option, answerIndex) => {
   disableSelection = true;
   const isCorrect = currentQuestion.correctAnswer === answerIndex;
   option.classList.add(isCorrect ? "correct" : "incorrect");
+  sessionHistory.push({
+    question: currentQuestion.question,
+    selected: currentQuestion.options[answerIndex],
+    correctAnswer: currentQuestion.options[currentQuestion.correctAnswer],
+    isCorrect: isCorrect
+  });
   if (!isCorrect) {
     localStorage.setItem("doubt_question", currentQuestion.question);
     highlightCorrectAnswer();
@@ -135,10 +150,22 @@ const resetQuiz = () => {
   resetTimer();
   correctAnswersCount = 0;
   questionsIndexHistory.length = 0;
+  sessionHistory = [];
   document.querySelector(".config-popup").classList.add("active");
   document.querySelector(".result-popup").classList.remove("active");
 };
 // Event listeners
 nextQuestionBtn.addEventListener("click", renderQuestion);
-resultContainer.querySelector(".try-again-btn").addEventListener("click", resetQuiz);
+resultContainer.querySelectorAll(".try-again-btn").forEach(btn => {
+  if (btn.textContent.includes("Try Again")) {
+    btn.addEventListener("click", resetQuiz);
+  }
+});
 configContainer.querySelector(".start-quiz-btn").addEventListener("click", startQuiz);
+
+if (resultContainer.querySelector(".analysis-btn")) {
+  resultContainer.querySelector(".analysis-btn").addEventListener("click", () => {
+    localStorage.setItem("quiz_analysis_report", JSON.stringify(sessionHistory));
+    window.location.href = "abdul&yash/index.html";
+  });
+}
