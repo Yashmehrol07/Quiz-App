@@ -50,37 +50,46 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     } else {
         try {
-            // Using the official v1 endpoint with gemini-1.5-flash
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    contents: [{
-                        role: "user",
-                        parts: [{ text: wrongQuestionsText }]
-                    }]
-                })
-            });
+            let lastError = null;
+            let endpoints = typeof CONFIG !== 'undefined' ? CONFIG.ENDPOINTS : ["https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"];
 
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error?.message || "Failed to fetch from Gemini");
+            for (const url of endpoints) {
+                try {
+                    const response = await fetch(`${url}?key=${API_KEY}`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            contents: [{ role: "user", parts: [{ text: wrongQuestionsText }] }]
+                        })
+                    });
 
-            const answerText = data.candidates[0].content.parts[0].text;
-            overallInsight.innerHTML = "<span style='color:#16AE56; font-weight:600;'><i class='fa-solid fa-check-circle'></i> Specific Question Analyses Generated Successfully!</span>";
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.error?.message || "Model failed");
 
-            // Simple parsing to try and plug explanations into respective cards
-            sessionHistory.forEach((q, i) => {
-                if (!q.isCorrect) {
-                    const expDiv = document.getElementById(`ai-exp-${i}`);
-                    const regex = new RegExp(`Q${i + 1} Explanation:\\s*([\\s\\S]*?)(?=Q\\d+ Explanation:|$)`, "i");
-                    const match = answerText.match(regex);
-                    if (match && match[1]) {
-                        expDiv.innerHTML = `<i class="fa-solid fa-robot"></i> <b>AI Tutor:</b> ${match[1].trim().replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')}`;
-                    } else {
-                        expDiv.innerHTML = `<i class="fa-solid fa-robot"></i> <b>AI Tutor:</b> The correct answer is ${q.correctAnswer} because it correctly addresses the question's premise.`;
-                    }
+                    const answerText = data.candidates[0].content.parts[0].text;
+                    overallInsight.innerHTML = "<span style='color:#16AE56; font-weight:600;'><i class='fa-solid fa-check-circle'></i> Specific Question Analyses Generated Successfully!</span>";
+
+                    // Simple parsing to try and plug explanations into respective cards
+                    sessionHistory.forEach((q, i) => {
+                        if (!q.isCorrect) {
+                            const expDiv = document.getElementById(`ai-exp-${i}`);
+                            const regex = new RegExp(`Q${i + 1} Explanation:\\s*([\\s\\S]*?)(?=Q\\d+ Explanation:|$)`, "i");
+                            const match = answerText.match(regex);
+                            if (match && match[1]) {
+                                expDiv.innerHTML = `<i class="fa-solid fa-robot"></i> <b>AI Tutor:</b> ${match[1].trim().replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')}`;
+                            } else {
+                                expDiv.innerHTML = `<i class="fa-solid fa-robot"></i> <b>AI Tutor:</b> The correct answer is ${q.correctAnswer} because it correctly addresses the question's premise.`;
+                            }
+                        }
+                    });
+                    return; // Success!
+                } catch (e) {
+                    lastError = e;
+                    console.warn(`Analysis Endpoint failed: ${url}`, e.message);
+                    continue;
                 }
-            });
+            }
+            throw lastError || new Error("All analysis models failed");
         } catch (error) {
             overallInsight.innerHTML = `<span style='color:#F23723'><i class="fa-solid fa-circle-exclamation"></i> Error generating AI insights: ${error.message}</span>`;
             sessionHistory.forEach((q, i) => {

@@ -145,7 +145,7 @@ const renderQuestion = () => {
   });
 };
 
-// Fetch questions from Gemini API
+// Fetch questions from Gemini API with multi-model fallback
 const fetchAIQuestions = async () => {
   const startBtn = configContainer.querySelector(".start-quiz-btn");
   const originalBtnText = startBtn.textContent;
@@ -155,6 +155,8 @@ const fetchAIQuestions = async () => {
     startBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> AI is generating questions...`;
 
     let API_KEY = typeof CONFIG !== 'undefined' ? CONFIG.GEMINI_API_KEY : "";
+    let endpoints = typeof CONFIG !== 'undefined' ? CONFIG.ENDPOINTS : ["https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"];
+
     if (!API_KEY || API_KEY === "PASTE_YOUR_API_KEY_HERE") {
       API_KEY = localStorage.getItem("gemini_api_key");
     }
@@ -166,32 +168,38 @@ const fetchAIQuestions = async () => {
     [{"question": "string", "options": ["opt1", "opt2", "opt3", "opt4"], "correctAnswer": 0}]. 
     The correctAnswer should be the index (0-3) of the correct option.`;
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: promptText }] }]
-      })
-    });
+    let lastError = null;
+    for (const url of endpoints) {
+      try {
+        const response = await fetch(`${url}?key=${API_KEY}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+        });
 
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error?.message || "API request failed");
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error?.message || "Model failed");
 
-    // Extract JSON from markdown response if Gemini wraps it in code blocks
-    let content = data.candidates[0].content.parts[0].text;
-    const jsonMatch = content.match(/\[[\s\S]*\]/);
-    if (jsonMatch) content = jsonMatch[0];
+        let content = data.candidates[0].content.parts[0].text;
+        const jsonMatch = content.match(/\[[\s\S]*\]/);
+        if (jsonMatch) content = jsonMatch[0];
 
-    const questions = JSON.parse(content);
-    if (Array.isArray(questions) && questions.length > 0) {
-      aiQuestions = questions;
-      isAIQuiz = true;
-      return true;
+        const questions = JSON.parse(content);
+        if (Array.isArray(questions) && questions.length > 0) {
+          aiQuestions = questions;
+          isAIQuiz = true;
+          return true;
+        }
+      } catch (e) {
+        lastError = e;
+        console.warn(`Endpoint failed: ${url}`, e.message);
+        continue; // Try next model
+      }
     }
-    return false;
+    throw lastError || new Error("All models failed");
   } catch (error) {
     console.error("AI Generation Error:", error);
-    isAIQuiz = false; // Fallback to local
+    isAIQuiz = false;
     return false;
   } finally {
     startBtn.disabled = false;

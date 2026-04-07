@@ -69,25 +69,41 @@ const typingEffect = (text, textElement, botMsgDiv) => {
 const generateResponse = async (botMsgDiv) => {
   const textElement = botMsgDiv.querySelector(".message-text");
   controller = new AbortController();
-  // Add user message and file data to the chat history
+
   chatHistory.push({
     role: "user",
     parts: [{ text: userData.message }, ...(userData.file.data ? [{ inline_data: (({ fileName, isImage, ...rest }) => rest)(userData.file) }] : [])],
   });
+
   try {
-    // Send the chat history to the API to get a response
-    const response = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contents: chatHistory }),
-      signal: controller.signal,
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error.message);
-    // Process the response text and display with typing effect
-    const responseText = data.candidates[0].content.parts[0].text.replace(/\*\*([^*]+)\*\*/g, "$1").trim();
-    typingEffect(responseText, textElement, botMsgDiv);
-    chatHistory.push({ role: "model", parts: [{ text: responseText }] });
+    let endpoints = typeof CONFIG !== 'undefined' ? CONFIG.ENDPOINTS : ["https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"];
+    let lastError = null;
+    let success = false;
+
+    for (const url of endpoints) {
+      try {
+        const response = await fetch(`${url}?key=${API_KEY}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contents: chatHistory }),
+          signal: controller.signal,
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error.message);
+
+        const responseText = data.candidates[0].content.parts[0].text.replace(/\*\*([^*]+)\*\*/g, "$1").trim();
+        typingEffect(responseText, textElement, botMsgDiv);
+        chatHistory.push({ role: "model", parts: [{ text: responseText }] });
+        success = true;
+        break;
+      } catch (e) {
+        lastError = e;
+        console.warn(`Chat Endpoint failed: ${url}`, e.message);
+        continue;
+      }
+    }
+    if (!success) throw lastError || new Error("All chat models failed");
   } catch (error) {
     const errorHTML = `<div style="background: rgba(242, 55, 35, 0.1); padding: 15px; border-radius: 12px; border-left: 5px solid #F23723; margin-top: 5px;">
                           <p style="color: #F23723; font-weight: 600; margin-bottom: 5px;"><i class="fa-solid fa-circle-exclamation"></i> AI Mentor is taking a break!</p>
