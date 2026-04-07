@@ -1,51 +1,65 @@
-# 🧠 AbdulYash AI Learning Hub
+# 🧠 AbdulYash AI Learning Hub (Elite Edition)
 
-The **AbdulYash AI Learning Hub** is an advanced, high-performance web platform designed to revolutionize the way students learn and practice. This project seamlessly integrates a smart quiz engine with an AI-powered mentor to provide a comprehensive learning experience.
+The **AbdulYash AI Learning Hub** is a cutting-edge, high-performance AI-integrated learning platform. This "Final Year Masterpiece" bridges the gap between traditional testing and natural language mentoring, ensuring students don't just "pass" but "understand".
+
+👉 **[Live Demo](https://yashmehrol07.github.io/Quiz-App/)**
+
+---
 
 ## 🚀 "Killer" Features
 
-- **Dynamic AI Question Generation**: Uses the **Google Gemini API** to generate unique multiple-choice questions on-the-fly based on your selected **Subject** and **Difficulty** (Easy, Moderate, Hard).
-- **Smart Fallback System**: If the AI API is unavailable, the system automatically switches to a high-quality local question bank, ensuring a smooth experience at all times.
-- **Detailed AI Analysis Dashboard**: After every quiz, get a full breakdown of your performance with **personalized 1-2 line AI explanations** for every single mistake you made.
-- **AI Mentor Chatbot**: A dedicated space to ask follow-up questions and clear your doubts instantly using natural language.
-- **Premium UI/UX**: Built with a stunning **Glassmorphism** design, smooth CSS animations, and a fully responsive layout optimized for all devices.
-
-## 🛠️ Built With
-
-- **Technoloy**: Vanilla HTML5, CSS3, JavaScript (ES6+)
-- **Brain**: Google Gemini API (`gemini-1.5-flash`)
-- **Icons**: FontAwesome & Material Symbols
-- **Fonts**: Google Fonts (Poppins & Montserrat)
-
-## 🏗️ Getting Started
-
-### 1. Prerequisites
-- A modern web browser (Chrome, Firefox, Edge).
-- A **Google Gemini API Key** (Get yours at [Google AI Studio](https://aistudio.google.com/app/apikey)).
-
-### 2. Setup
-1.  Clone this repository to your local machine.
-2.  Open the folder in your code editor (e.g., VS Code).
-3.  Create or open `javascript/config.js` and add your API key:
-    ```javascript
-    const CONFIG = {
-        GEMINI_API_KEY: "YOUR_API_KEY_HERE"
-    };
-    ```
-    *(Note: This file is ignored by Git to keep your key private).*
-
-## 💻 How to Run in VS Code
-
-For the best experience, we recommend using the **Live Server** extension:
-
-1.  Open the project folder in **VS Code**.
-2.  Install the **Live Server** extension (by Ritwick Dey).
-3.  Open `index.html`.
-4.  Click the **"Go Live"** button in the bottom-right corner of your VS Code window.
-5.  The app will automatically open in your default browser!
-
-## 📜 License
-This project is part of a Final Year achievement. All rights reserved.
+- **Gemini 2.0/2.5 Intelligence**: Leveraging the world's most advanced AI models for real-time quiz generation and deep conceptual tutoring.
+- **Dynamic AI Quiz Arena**: Auto-generates unique multiple-choice questions on any subject with three difficulty levels (Easy, Moderate, Hard).
+- **Bulletproof Resilience (Offline Stability Mode)**:
+    - **Auto-Retry**: Smarter logic that waits and retries if the AI server is busy.
+    - **Safety Net**: Automatically switches to high-quality local data if your API quota is exceeded or the network is down.
+- **Deep Analysis Dashboard**: Get a performance breakdown with personalized, 1-2 line AI explanations for every mistake, ensuring you learn from every error.
+- **Voice-Enabled Mentor**: Every AI explanation can be read aloud using the integrated Web Speech API for an accessible learning experience.
+- **AI Mentor Chatbot**: A dedicated space for follow-up questions, clearing doubts instantly in a minimalist, distraction-free UI.
+- **Premium UX/UX**: Built with a stunning **Glassmorphism** design, animated background blobs, and a fully responsive layout.
 
 ---
+
+## 🏗️ Technical Architecture
+
+- **Frontend**: Vanilla HTML5, CSS3, JavaScript (ES6+).
+- **AI Core**: Google Gemini 2.0 Flash / Pro Series.
+- **Persistence**: Browser `localStorage` for High Scores and API Key portability.
+- **Accessibility**: Web Speech API for voice mentoring.
+
+---
+
+## 🛠️ Getting Started (Local Development)
+
+### 1. Prerequisites
+- A modern web browser.
+- A **Google Gemini API Key** from [Google AI Studio](https://aistudio.google.com/app/apikey).
+
+### 2. Setup
+1.  Clone this repository.
+2.  Open the folder in **VS Code**.
+3.  Configure your key in `javascript/config.js`:
+    ```javascript
+    const CONFIG = {
+        GEMINI_API_KEY: "AIzaSy..." // Paste your key here
+    };
+    ```
+4.  **Run**: Use the **Live Server** extension in VS Code to launch `index.html`.
+
+---
+
+## 📡 Live Deployment (GitHub Pages / Vercel)
+
+1.  **Push** your code to GitHub (Note: `config.js` is ignored for security).
+2.  **Enable GitHub Pages** in your repository settings.
+3.  **Activate AI on the Live Site**:
+    - Open your live link.
+    - Click **"🔑 Setup API Key (For Live Site)"** at the bottom of the home page.
+    - Paste your key. Your live site is now fully AI-powered!
+
+---
+
+## 🏛️ Project Legacy
+This project was built to demonstrate the power of **Hybrid Intelligence**—combining the limitless knowledge of the Cloud with the rock-solid stability of Local processing.
+
 *Built with ❤️ for a spectacular learning experience.*
