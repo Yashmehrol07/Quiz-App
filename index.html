@@ -43,9 +43,51 @@
                     <i class="fa-solid fa-robot"></i> Ask AI Mentor
                 </a>
             </div>
+            <p id="ai-status-msg"
+                style="margin-top: 20px; font-size: 0.8rem; color: #a2aac2; cursor: pointer; text-decoration: underline;"
+                onclick="runAIDiagnostic()">💡 AI Connection Status: Check Now</p>
         </div>
     </main>
 
+    <script src="javascript/config.js"></script>
+    <script>
+        async function runAIDiagnostic() {
+            const msg = document.getElementById("ai-status-msg");
+            msg.innerHTML = "⏳ Testing AI Endpoints... please wait.";
+            msg.style.color = "#1d7efd";
+
+            const API_KEY = typeof CONFIG !== 'undefined' ? CONFIG.GEMINI_API_KEY : "";
+            const endpoints = typeof CONFIG !== 'undefined' ? CONFIG.ENDPOINTS : [];
+
+            if (!API_KEY || API_KEY.includes("PASTE")) {
+                msg.innerHTML = "❌ Error: API Key missing in config.js";
+                msg.style.color = "#F23723";
+                return;
+            }
+
+            let results = [];
+            for (let url of endpoints) {
+                try {
+                    const res = await fetch(`${url}?key=${API_KEY}`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: "hi" }] }] })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        results.push(`✅ ${url.split('models/')[1].split(':')[0]} is Working!`);
+                    } else {
+                        results.push(`❌ ${url.split('models/')[1].split(':')[0]} Failed: ${data.error?.message || "Unknown error"}`);
+                    }
+                } catch (e) {
+                    results.push(`⚠️ ${url.split('models/')[1].split(':')[0]} Connection Error`);
+                }
+            }
+            alert("AI Diagnostic Report:\n\n" + results.join("\n"));
+            msg.innerHTML = "💡 AI Connection Status: Check Now";
+            msg.style.color = "#a2aac2";
+        }
+    </script>
 </body>
 
 </html>
