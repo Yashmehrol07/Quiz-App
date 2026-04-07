@@ -115,12 +115,28 @@ const generateResponse = async (botMsgDiv) => {
         continue;
       }
     }
-    if (!success) throw lastError || new Error("All chat models failed");
+    if (!success) {
+      if (lastError && lastError.message.includes("Quota exceeded")) {
+        // SAFETY NET: Provide a high-quality local response
+        const mockPrompt = userData.message.toLowerCase();
+        let fallbackMsg = "I'm currently processing a lot of data, but I can still help! Based on your question, I recommend focusing on the fundamental principles of this topic. Remember to check your syntax and logic carefully. Is there a specific part of the code you'd like me to review manually?";
+
+        if (mockPrompt.includes("html")) fallbackMsg = "HTML (HyperText Markup Language) is the standard language for creating web pages. It provides the structure of a webpage, like headings, paragraphs, and links. I recommend mastering tags and attributes for your project!";
+        if (mockPrompt.includes("css")) fallbackMsg = "CSS (Cascading Style Sheets) is used to style and lay out web pages. It controls colors, fonts, and spacing. For your project, focus on Flexbox and Grid for better layouts!";
+
+        typingEffect(fallbackMsg + " (Note: I am running in Offline Stability Mode to save your API quota!)", textElement, botMsgDiv);
+        chatHistory.push({ role: "model", parts: [{ text: fallbackMsg }] });
+      } else {
+        throw lastError || new Error("All chat models failed");
+      }
+    }
   } catch (error) {
     const isHighDemand = error.message.toLowerCase().includes("high demand") || error.message.toLowerCase().includes("overloaded");
+    const isQuota = error.message.toLowerCase().includes("quota");
+
     const errorHTML = `<div style="background: rgba(242, 55, 35, 0.1); padding: 15px; border-radius: 12px; border-left: 5px solid #F23723; margin-top: 5px;">
-                          <p style="color: #F23723; font-weight: 600; margin-bottom: 5px;"><i class="fa-solid fa-circle-exclamation"></i> ${isHighDemand ? "AI Mentor is heavily busy!" : "AI Mentor is taking a break!"}</p>
-                          <p style="font-size: 0.85rem; color: #a2aac2;">${isHighDemand ? "All elite models are currently under heavy load globally. Please wait 10 seconds and try again." : error.message}</p>
+                          <p style="color: #F23723; font-weight: 600; margin-bottom: 5px;"><i class="fa-solid fa-circle-exclamation"></i> ${isQuota ? "Quota Paused" : (isHighDemand ? "AI Mentor is heavily busy!" : "AI Mentor is taking a break!")}</p>
+                          <p style="font-size: 0.85rem; color: #a2aac2;">${isQuota ? "You've used all your free AI requests for now. The app has switched to <b>Offline Stability Mode</b> to keep working for you!" : (isHighDemand ? "All elite models are currently under heavy load globally. Please wait 10 seconds." : error.message)}</p>
                         </div>`;
     textElement.innerHTML = errorHTML;
     botMsgDiv.classList.remove("loading");

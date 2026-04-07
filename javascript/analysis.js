@@ -56,13 +56,23 @@ document.addEventListener("DOMContentLoaded", async () => {
             for (const url of endpoints) {
                 try {
                     console.log(`Attempting Analysis with: ${url}`);
-                    const response = await fetch(`${url}?key=${API_KEY}`, {
+                    let response = await fetch(`${url}?key=${API_KEY}`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
                             contents: [{ role: "user", parts: [{ text: wrongQuestionsText }] }]
                         })
                     });
+
+                    // Handle Overload
+                    if (!response.ok && (response.status === 503 || response.status === 429)) {
+                        console.warn(`Analysis busy: ${url}. Retrying...`);
+                        await new Promise(r => setTimeout(r, 1500));
+                        response = await fetch(`${url}?key=${API_KEY}`, {
+                            method: "POST", headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: wrongQuestionsText }] }] })
+                        });
+                    }
 
                     const data = await response.json();
                     if (!response.ok) throw new Error(data.error?.message || "Model failed");
@@ -90,13 +100,24 @@ document.addEventListener("DOMContentLoaded", async () => {
                     continue;
                 }
             }
+            if (lastError && lastError.message.includes("Quota exceeded")) {
+                overallInsight.innerHTML = "<span style='color:#1d7efd; font-weight:600;'><i class='fa-solid fa-shield-halved'></i> Offline Stability Mode Active (Quota Full)</span>";
+                sessionHistory.forEach((q, i) => {
+                    if (!q.isCorrect) {
+                        const expDiv = document.getElementById(`ai-exp-${i}`);
+                        expDiv.innerHTML = `<i class="fa-solid fa-robot"></i> <b>Simple Tutor:</b> The correct answer is <b>${q.correctAnswer}</b>. This concept is fundamental to ${quizCategory}. (API Quota full, running offline explanation)`;
+                    }
+                });
+                return;
+            }
             throw lastError || new Error("All analysis models failed");
         } catch (error) {
-            overallInsight.innerHTML = `<span style='color:#F23723'><i class="fa-solid fa-circle-exclamation"></i> Error generating AI insights: ${error.message}</span>`;
+            const isQuota = error.message.includes("Quota");
+            overallInsight.innerHTML = `<span style='color:#F23723'><i class="fa-solid fa-circle-exclamation"></i> ${isQuota ? 'Stability Mode:' : 'Error:'} ${error.message}</span>`;
             sessionHistory.forEach((q, i) => {
                 if (!q.isCorrect) {
                     const expDiv = document.getElementById(`ai-exp-${i}`);
-                    if (expDiv) expDiv.innerHTML = "Explanation failed to load. " + error.message;
+                    if (expDiv) expDiv.innerHTML = isQuota ? "Switched to offline help (Quota full)." : "Explanation failed to load. " + error.message;
                 }
             });
         }
