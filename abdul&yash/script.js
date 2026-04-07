@@ -9,7 +9,7 @@ const themeToggleBtn = document.querySelector("#theme-toggle-btn");
 // The API Key is securely loaded from javascript/config.js.
 // No annoying popups will be shown.
 const API_KEY = typeof CONFIG !== 'undefined' ? CONFIG.GEMINI_API_KEY : "YOUR_KEY_HERE";
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${API_KEY}`;
+const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`;
 
 // Advanced Knowledge Bridge
 window.addEventListener("DOMContentLoaded", () => {
@@ -89,8 +89,11 @@ const generateResponse = async (botMsgDiv) => {
     typingEffect(responseText, textElement, botMsgDiv);
     chatHistory.push({ role: "model", parts: [{ text: responseText }] });
   } catch (error) {
-    textElement.textContent = error.name === "AbortError" ? "Response generation stopped." : error.message;
-    textElement.style.color = "#d62939";
+    const errorHTML = `<div style="background: rgba(242, 55, 35, 0.1); padding: 15px; border-radius: 12px; border-left: 5px solid #F23723; margin-top: 5px;">
+                          <p style="color: #F23723; font-weight: 600; margin-bottom: 5px;"><i class="fa-solid fa-circle-exclamation"></i> AI Mentor is taking a break!</p>
+                          <p style="font-size: 0.85rem; color: #a2aac2;">${error.message.includes("not found") ? "This model is currently unavailable in your region. We are switching to a stable version." : error.message}</p>
+                        </div>`;
+    textElement.innerHTML = errorHTML;
     botMsgDiv.classList.remove("loading");
     document.body.classList.remove("bot-responding");
     scrollToBottom();
