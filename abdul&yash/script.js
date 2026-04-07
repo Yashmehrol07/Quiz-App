@@ -9,7 +9,7 @@ const themeToggleBtn = document.querySelector("#theme-toggle-btn");
 // The API Key is securely loaded from javascript/config.js.
 // No annoying popups will be shown.
 const API_KEY = typeof CONFIG !== 'undefined' ? CONFIG.GEMINI_API_KEY : "YOUR_KEY_HERE";
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${API_KEY}`;
+const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 
 // Advanced Knowledge Bridge
 window.addEventListener("DOMContentLoaded", () => {
