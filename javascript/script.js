@@ -166,7 +166,7 @@ const fetchAIQuestions = async () => {
     [{"question": "string", "options": ["opt1", "opt2", "opt3", "opt4"], "correctAnswer": 0}]. 
     The correctAnswer should be the index (0-3) of the correct option.`;
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${API_KEY}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
