@@ -102,17 +102,22 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
             if (lastError && lastError.message.includes("Quota exceeded")) {
                 overallInsight.innerHTML = "<span style='color:#1d7efd; font-weight:600;'><i class='fa-solid fa-shield-halved'></i> Offline Stability Mode Active (Quota Full)</span>";
+
+                // Fetch the category from one of the questions
+                const firstQuestion = sessionHistory[0];
+                const displayCategory = firstQuestion ? "the topic" : "this concept";
+
                 sessionHistory.forEach((q, i) => {
                     if (!q.isCorrect) {
                         const expDiv = document.getElementById(`ai-exp-${i}`);
-                        expDiv.innerHTML = `<i class="fa-solid fa-robot"></i> <b>Simple Tutor:</b> The correct answer is <b>${q.correctAnswer}</b>. This concept is fundamental to ${quizCategory}. (API Quota full, running offline explanation)`;
+                        expDiv.innerHTML = `<i class="fa-solid fa-robot"></i> <b>Simple Tutor:</b> The correct answer is <b>${q.correctAnswer}</b>. This concept is fundamental to ${displayCategory}. (API Quota full, running offline explanation)`;
                     }
                 });
                 return;
             }
             throw lastError || new Error("All analysis models failed");
         } catch (error) {
-            const isQuota = error.message.includes("Quota");
+            const isQuota = error.message.toLowerCase().includes("quota");
             overallInsight.innerHTML = `<span style='color:#F23723'><i class="fa-solid fa-circle-exclamation"></i> ${isQuota ? 'Stability Mode:' : 'Error:'} ${error.message}</span>`;
             sessionHistory.forEach((q, i) => {
                 if (!q.isCorrect) {
@@ -126,8 +131,19 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 window.speakText = (elementId) => {
     const text = document.getElementById(elementId).innerText;
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.9;
-    window.speechSynthesis.cancel(); // Stop any current speech
-    window.speechSynthesis.speak(utterance);
+    window.speechSynthesis.cancel(); // Critical: Stop any current speech immediately
+
+    // Slight delay to ensure cancel is registered by the browser
+    setTimeout(() => {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+
+        // Try to pick a natural-sounding voice if available
+        const voices = window.speechSynthesis.getVoices();
+        const preferredVoice = voices.find(v => v.lang.startsWith('en') && v.name.includes('Google')) || voices[0];
+        if (preferredVoice) utterance.voice = preferredVoice;
+
+        window.speechSynthesis.speak(utterance);
+    }, 50);
 };

@@ -160,7 +160,17 @@ const fetchAIQuestions = async () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: `Generate ${numberOfQuestions} multiple choice questions about ${quizCategory} at ${quizDifficulty} difficulty level. Return ONLY a JSON array.` }] }],
+          contents: [{
+            parts: [{
+              text: `Generate ${numberOfQuestions} unique multiple choice questions about ${quizCategory}.
+          - Difficulty: ${quizDifficulty}.
+          - Instructions:
+            1. Ensure questions are diverse, creative, and NOT repetitive.
+            2. For 'hard' difficulty, use advanced concepts and scenario-based questions.
+            3. Each question must have exactly 4 options.
+            4. Return ONLY a valid JSON array of objects with 'question', 'options' (array of strings), and 'correctAnswer' (0-3 index).
+            5. Do NOT include any markdown formatting like \`\`\`json.` }]
+          }],
           model: "gemini-2.0-flash"
         })
       });
@@ -193,7 +203,19 @@ const fetchAIQuestions = async () => {
       const response = await fetch(directUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contents: [{ parts: [{ text: `Generate ${numberOfQuestions} multiple choice questions about ${quizCategory} at ${quizDifficulty} difficulty level. Return ONLY a JSON array.` }] }] })
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: `Generate ${numberOfQuestions} unique multiple choice questions about ${quizCategory}.
+          - Difficulty: ${quizDifficulty}.
+          - Instructions:
+            1. Ensure questions are diverse, creative, and NOT repetitive.
+            2. For 'hard' difficulty, use advanced concepts and scenario-based questions.
+            3. Each question must have exactly 4 options.
+            4. Return ONLY a valid JSON array of objects with 'question', 'options' (array of strings), and 'correctAnswer' (0-3 index).
+            5. Do NOT include any markdown formatting like \`\`\`json.` }]
+          }]
+        })
       });
       if (response.ok) {
         const data = await response.json();

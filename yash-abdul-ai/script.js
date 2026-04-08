@@ -64,6 +64,11 @@ const typingEffect = (text, textElement, botMsgDiv) => {
       clearInterval(typingInterval);
       botMsgDiv.classList.remove("loading");
       document.body.classList.remove("bot-responding");
+
+      // Auto-speak if it's a short response or voice was used (Accessibility Feature)
+      if (typeof window.speakText === "function") {
+        window.speakText(textElement.id || chatsContainer.lastChild.querySelector(".message-text").id);
+      }
     }
   }, 40); // 40 ms delay
 };
@@ -164,6 +169,25 @@ const generateResponse = async (botMsgDiv) => {
   }
 };
 
+// Global Speak Function for AI Mentor
+window.speakText = (elementId) => {
+  if (!elementId) return;
+  const textElement = document.getElementById(elementId);
+  if (!textElement) return;
+
+  const text = textElement.innerText;
+  window.speechSynthesis.cancel();
+
+  setTimeout(() => {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1.0;
+    const voices = window.speechSynthesis.getVoices();
+    const preferredVoice = voices.find(v => v.lang.startsWith('en') && v.name.includes('Google')) || voices[0];
+    if (preferredVoice) utterance.voice = preferredVoice;
+    window.speechSynthesis.speak(utterance);
+  }, 50);
+};
+
 // API Key Management
 document.querySelector("#api-settings-btn").addEventListener("click", () => {
   const newKey = prompt("Please enter your Gemini API Key:", localStorage.getItem("gemini_api_key") || "");
@@ -194,7 +218,7 @@ const handleFormSubmit = (e) => {
   scrollToBottom();
   setTimeout(() => {
     // Generate bot message HTML and add in the chat container
-    const botMsgHTML = `<img class="avatar" src="ya.jpg" /> <p class="message-text">Just a sec...</p>`;
+    const botMsgHTML = `<img class="avatar" src="ya.jpg" /> <p class="message-text" id="msg-${Date.now()}">Just a sec...</p>`;
     const botMsgDiv = createMessageElement(botMsgHTML, "bot-message", "loading");
     chatsContainer.appendChild(botMsgDiv);
     scrollToBottom();
@@ -251,3 +275,46 @@ document.addEventListener("click", ({ target }) => {
 // Add event listeners for form submission and file input click
 promptForm.addEventListener("submit", handleFormSubmit);
 promptForm.querySelector("#add-file-btn").addEventListener("click", () => fileInput.click());
+
+// Voice Assistant (Speech to Text) Implementation
+const micBtn = document.querySelector("#mic-btn");
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+if (SpeechRecognition) {
+  const recognition = new SpeechRecognition();
+  recognition.continuous = false;
+  recognition.interimResults = false;
+
+  recognition.onstart = () => {
+    micBtn.style.color = "#F23723";
+    micBtn.textContent = "settings_voice";
+  };
+
+  recognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    promptInput.value = transcript;
+    micBtn.textContent = "mic";
+    micBtn.style.color = "";
+    handleFormSubmit(new Event("submit"));
+  };
+
+  recognition.onerror = () => {
+    micBtn.textContent = "mic";
+    micBtn.style.color = "";
+  };
+
+  recognition.onend = () => {
+    micBtn.textContent = "mic";
+    micBtn.style.color = "";
+  };
+
+  micBtn.addEventListener("click", () => {
+    try {
+      recognition.start();
+    } catch (e) {
+      recognition.stop();
+    }
+  });
+} else {
+  micBtn.style.display = "none";
+}
