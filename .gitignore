@@ -1,2 +1,3 @@
-# Ignore the configuration file containing the API Key
-javascript/config.js
+# javascript/config.js
+.vercel
+.env*.local

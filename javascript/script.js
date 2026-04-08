@@ -145,7 +145,6 @@ const renderQuestion = () => {
   });
 };
 
-// Fetch questions from Gemini API with multi-model fallback
 const fetchAIQuestions = async () => {
   const startBtn = configContainer.querySelector(".start-quiz-btn");
   const originalBtnText = startBtn.textContent;
@@ -154,63 +153,64 @@ const fetchAIQuestions = async () => {
     startBtn.disabled = true;
     startBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> AI is generating questions...`;
 
-    let API_KEY = typeof CONFIG !== 'undefined' ? CONFIG.GEMINI_API_KEY : "";
-    let endpoints = typeof CONFIG !== 'undefined' ? CONFIG.ENDPOINTS : ["https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"];
+    // 1. Try Secure Proxy (Only works on Live Site)
+    try {
+      console.log(`Quiz Attempt: /api/quiz`);
+      const response = await fetch(`/api/quiz`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: `Generate ${numberOfQuestions} multiple choice questions about ${quizCategory} at ${quizDifficulty} difficulty level. Return ONLY a JSON array.` }] }],
+          model: "gemini-2.0-flash"
+        })
+      });
 
-    if (!API_KEY || API_KEY === "PASTE_YOUR_API_KEY_HERE") {
-      API_KEY = localStorage.getItem("gemini_api_key");
-    }
-
-    if (!API_KEY) throw new Error("No API Key found");
-
-    const promptText = `Generate ${numberOfQuestions} multiple choice questions about ${quizCategory} at ${quizDifficulty} difficulty level. 
-    Return the response ONLY as a JSON array of objects with the following structure: 
-    [{"question": "string", "options": ["opt1", "opt2", "opt3", "opt4"], "correctAnswer": 0}]. 
-    The correctAnswer should be the index (0-3) of the correct option.`;
-
-    let lastError = null;
-    for (const url of endpoints) {
-      try {
-        console.log(`Quiz Attempt: ${url}`);
-        let response = await fetch(`${url}?key=${API_KEY}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
-        });
-
-        // Handle Overload
-        if (!response.ok && (response.status === 503 || response.status === 429)) {
-          console.warn(`Retrying ${url} after 1.5s...`);
-          await new Promise(r => setTimeout(r, 1500));
-          response = await fetch(`${url}?key=${API_KEY}`, {
-            method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
-          });
-        }
-
+      if (response.ok) {
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error?.message || "Model failed");
-
         let content = data.candidates[0].content.parts[0].text;
         const jsonMatch = content.match(/\[[\s\S]*\]/);
         if (jsonMatch) content = jsonMatch[0];
-
         const questions = JSON.parse(content);
         if (Array.isArray(questions) && questions.length > 0) {
           aiQuestions = questions;
           isAIQuiz = true;
           return true;
         }
-      } catch (e) {
-        lastError = e;
-        console.warn(`Endpoint failed: ${url}`, e.message);
-        continue; // Try next model
+      }
+    } catch (e) {
+      console.warn("Secure Proxy not reachable (Normal for local dev):", e.message);
+    }
+
+    // 2. Fallback to Direct API (Works Local and Live with Key)
+    let API_KEY = typeof CONFIG !== 'undefined' ? CONFIG.GEMINI_API_KEY : "";
+    if (!API_KEY || API_KEY.includes("PASTE") || API_KEY.includes("MANAGED")) {
+      API_KEY = localStorage.getItem("gemini_api_key");
+    }
+
+    if (API_KEY && API_KEY.length > 10) {
+      console.log("Using direct API fallback...");
+      const directUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
+      const response = await fetch(directUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents: [{ parts: [{ text: `Generate ${numberOfQuestions} multiple choice questions about ${quizCategory} at ${quizDifficulty} difficulty level. Return ONLY a JSON array.` }] }] })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        let content = data.candidates[0].content.parts[0].text;
+        const jsonMatch = content.match(/\[[\s\S]*\]/);
+        if (jsonMatch) content = jsonMatch[0];
+        const questions = JSON.parse(content);
+        if (Array.isArray(questions) && questions.length > 0) {
+          aiQuestions = questions;
+          isAIQuiz = true;
+          return true;
+        }
       }
     }
-    throw lastError || new Error("All models failed");
+    return false;
   } catch (error) {
     console.error("AI Generation Error:", error);
-    isAIQuiz = false;
     return false;
   } finally {
     startBtn.disabled = false;

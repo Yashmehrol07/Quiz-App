@@ -39,65 +39,15 @@
                 <a href="quiz.html" class="btn btn-primary">
                     <i class="fa-solid fa-gamepad"></i> Enter Quiz Arena
                 </a>
-                <a href="abdul&yash/index.html" class="btn btn-secondary">
+                <a href="yash-abdul-ai/index.html" class="btn btn-secondary">
                     <i class="fa-solid fa-robot"></i> Ask AI Mentor
                 </a>
-            </div>
-            <div style="margin-top: 30px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
-                <p id="ai-status-msg"
-                    style="font-size: 0.8rem; color: #a2aac2; cursor: pointer; text-decoration: underline;"
-                    onclick="runAIDiagnostic()">💡 AI Connection Status: Check Now</p>
-                <p style="font-size: 0.8rem; color: #a2aac2; cursor: pointer; text-decoration: underline;"
-                    onclick="setApiKey()">🔑 Setup API Key (For Live Site)</p>
             </div>
         </div>
     </main>
 
     <script src="javascript/config.js"></script>
     <script>
-        function setApiKey() {
-            const key = prompt("Enter your Gemini API Key for this live session:", localStorage.getItem("gemini_api_key") || "");
-            if (key) {
-                localStorage.setItem("gemini_api_key", key);
-                alert("✅ API Key saved to your browser! Deployment mode is ready.");
-            }
-        }
-        async function runAIDiagnostic() {
-            const msg = document.getElementById("ai-status-msg");
-            msg.innerHTML = "⏳ Testing AI Endpoints... please wait.";
-            msg.style.color = "#1d7efd";
-
-            const API_KEY = typeof CONFIG !== 'undefined' ? CONFIG.GEMINI_API_KEY : "";
-            const endpoints = typeof CONFIG !== 'undefined' ? CONFIG.ENDPOINTS : [];
-
-            if (!API_KEY || API_KEY.includes("PASTE")) {
-                msg.innerHTML = "❌ Error: API Key missing in config.js";
-                msg.style.color = "#F23723";
-                return;
-            }
-
-            let results = [];
-            for (let url of endpoints) {
-                try {
-                    const res = await fetch(`${url}?key=${API_KEY}`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ contents: [{ parts: [{ text: "hi" }] }] })
-                    });
-                    const data = await res.json();
-                    if (res.ok) {
-                        results.push(`✅ ${url.split('models/')[1].split(':')[0]} is Working!`);
-                    } else {
-                        results.push(`❌ ${url.split('models/')[1].split(':')[0]} Failed: ${data.error?.message || "Unknown error"}`);
-                    }
-                } catch (e) {
-                    results.push(`⚠️ ${url.split('models/')[1].split(':')[0]} Connection Error`);
-                }
-            }
-            alert("Elite AI Diagnostic Report (Gemini 2.0/2.5 series):\n\n" + results.join("\n"));
-            msg.innerHTML = "💡 AI Connection Status: Check Now";
-            msg.style.color = "#a2aac2";
-        }
     </script>
 </body>
 

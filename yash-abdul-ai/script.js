@@ -6,10 +6,12 @@ const fileInput = promptForm.querySelector("#file-input");
 const fileUploadWrapper = promptForm.querySelector(".file-upload-wrapper");
 const themeToggleBtn = document.querySelector("#theme-toggle-btn");
 // API Setup
-// The API Key is securely loaded from javascript/config.js.
-// No annoying popups will be shown.
-const API_KEY = typeof CONFIG !== 'undefined' ? CONFIG.GEMINI_API_KEY : "YOUR_KEY_HERE";
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`;
+// The API Key is securely loaded from javascript/config.js or localStorage.
+let API_KEY = typeof CONFIG !== 'undefined' ? CONFIG.GEMINI_API_KEY : "";
+if (!API_KEY || API_KEY.includes("PASTE") || API_KEY.includes("YOUR_KEY")) {
+  API_KEY = localStorage.getItem("gemini_api_key") || "";
+}
+const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
 
 // Advanced Knowledge Bridge
 window.addEventListener("DOMContentLoaded", () => {
@@ -76,58 +78,57 @@ const generateResponse = async (botMsgDiv) => {
   });
 
   try {
-    let endpoints = typeof CONFIG !== 'undefined' ? CONFIG.ENDPOINTS : ["https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"];
-    let lastError = null;
     let success = false;
+    let lastError = null;
 
-    for (const url of endpoints) {
-      try {
-        console.log(`Chatbot Attempt: ${url}`);
-        let response = await fetch(`${url}?key=${API_KEY}`, {
+    // 1. Try Secure Proxy (Live Site)
+    try {
+      console.log(`Attempting Secure Proxy: /api/quiz`);
+      const response = await fetch(`/api/quiz`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents: chatHistory, model: "gemini-1.5-flash" }),
+        signal: controller.signal,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const responseText = data.candidates[0].content.parts[0].text.replace(/\*\*([^*]+)\*\*/g, "$1").trim();
+        typingEffect(responseText, textElement, botMsgDiv);
+        chatHistory.push({ role: "model", parts: [{ text: responseText }] });
+        success = true;
+      }
+    } catch (e) {
+      console.warn("Secure Proxy unavailable, checking fallback.");
+    }
+
+    // 2. Fallback to Direct API (Works Local and Live with Key)
+    if (!success) {
+      let key = (typeof CONFIG !== 'undefined' && CONFIG.GEMINI_API_KEY && !CONFIG.GEMINI_API_KEY.includes("MANAGED")) ? CONFIG.GEMINI_API_KEY : "";
+      if (!key) key = localStorage.getItem("gemini_api_key");
+
+      if (key && key.length > 20) {
+        console.log("Using direct API fallback for chatbot...");
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
+        const response = await fetch(url, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ contents: chatHistory }),
           signal: controller.signal,
         });
 
-        // Handle High Demand (503/429) gracefully with a retry
-        if (!response.ok && (response.status === 503 || response.status === 429)) {
-          console.warn(`Model busy: ${url}. Retrying in 1.5s...`);
-          textElement.innerHTML = `<span style="color:#1d7efd; font-size:0.8rem;"><i class="fa-solid fa-hourglass-half"></i> AI is busy, trying Lite version...</span>`;
-          await new Promise(r => setTimeout(r, 1500));
-          response = await fetch(`${url}?key=${API_KEY}`, {
-            method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ contents: chatHistory }), signal: controller.signal,
-          });
+        if (response.ok) {
+          const data = await response.json();
+          const responseText = data.candidates[0].content.parts[0].text.replace(/\*\*([^*]+)\*\*/g, "$1").trim();
+          typingEffect(responseText, textElement, botMsgDiv);
+          chatHistory.push({ role: "model", parts: [{ text: responseText }] });
+          success = true;
+        } else {
+          const err = await response.json();
+          throw new Error(err.error?.message || "Direct API failed");
         }
-
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error?.message || "Model failed");
-
-        const responseText = data.candidates[0].content.parts[0].text.replace(/\*\*([^*]+)\*\*/g, "$1").trim();
-        typingEffect(responseText, textElement, botMsgDiv);
-        chatHistory.push({ role: "model", parts: [{ text: responseText }] });
-        success = true;
-        break;
-      } catch (e) {
-        lastError = e;
-        console.warn(`Chat Endpoint failed: ${url}`, e.message);
-        continue;
-      }
-    }
-    if (!success) {
-      if (lastError && lastError.message.includes("Quota exceeded")) {
-        // SAFETY NET: Provide a high-quality local response
-        const mockPrompt = userData.message.toLowerCase();
-        let fallbackMsg = "I'm currently processing a lot of data, but I can still help! Based on your question, I recommend focusing on the fundamental principles of this topic. Remember to check your syntax and logic carefully. Is there a specific part of the code you'd like me to review manually?";
-
-        if (mockPrompt.includes("html")) fallbackMsg = "HTML (HyperText Markup Language) is the standard language for creating web pages. It provides the structure of a webpage, like headings, paragraphs, and links. I recommend mastering tags and attributes for your project!";
-        if (mockPrompt.includes("css")) fallbackMsg = "CSS (Cascading Style Sheets) is used to style and lay out web pages. It controls colors, fonts, and spacing. For your project, focus on Flexbox and Grid for better layouts!";
-
-        typingEffect(fallbackMsg + " (Note: I am running in Offline Stability Mode to save your API quota!)", textElement, botMsgDiv);
-        chatHistory.push({ role: "model", parts: [{ text: fallbackMsg }] });
       } else {
-        throw lastError || new Error("All chat models failed");
+        throw new Error("No valid API Key found. Check config.js.");
       }
     }
   } catch (error) {
@@ -136,7 +137,7 @@ const generateResponse = async (botMsgDiv) => {
 
     const errorHTML = `<div style="background: rgba(242, 55, 35, 0.1); padding: 15px; border-radius: 12px; border-left: 5px solid #F23723; margin-top: 5px;">
                           <p style="color: #F23723; font-weight: 600; margin-bottom: 5px;"><i class="fa-solid fa-circle-exclamation"></i> ${isQuota ? "Quota Paused" : (isHighDemand ? "AI Mentor is heavily busy!" : "AI Mentor is taking a break!")}</p>
-                          <p style="font-size: 0.85rem; color: #a2aac2;">${isQuota ? "You've used all your free AI requests for now. The app has switched to <b>Offline Stability Mode</b> to keep working for you!" : (isHighDemand ? "All elite models are currently under heavy load globally. Please wait 10 seconds." : error.message)}</p>
+                          <p style="font-size: 0.85rem; color: #a2aac2;">${isQuota ? "You've used all your free AI requests. Try again later!" : (isHighDemand ? "AI is busy. Wait 10 seconds." : error.message)}</p>
                         </div>`;
     textElement.innerHTML = errorHTML;
     botMsgDiv.classList.remove("loading");
