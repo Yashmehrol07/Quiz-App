@@ -125,7 +125,16 @@ const generateResponse = async (botMsgDiv) => {
           success = true;
         } else {
           const err = await response.json();
-          throw new Error(err.error?.message || "Direct API failed");
+          const isQuota = err.error?.message?.toLowerCase().includes("quota") || err.error?.status === "RESOURCE_EXHAUSTED";
+
+          if (isQuota && typeof getLocalFallback === "function") {
+            const fallbackText = getLocalFallback(userData.message);
+            typingEffect(fallbackText, textElement, botMsgDiv);
+            chatHistory.push({ role: "model", parts: [{ text: fallbackText }] });
+            success = true;
+          } else {
+            throw new Error(err.error?.message || "Direct API failed");
+          }
         }
       } else {
         throw new Error("No valid API Key found. Check config.js.");
@@ -135,18 +144,36 @@ const generateResponse = async (botMsgDiv) => {
     const isHighDemand = error.message.toLowerCase().includes("high demand") || error.message.toLowerCase().includes("overloaded");
     const isQuota = error.message.toLowerCase().includes("quota");
 
-    const errorHTML = `<div style="background: rgba(242, 55, 35, 0.1); padding: 15px; border-radius: 12px; border-left: 5px solid #F23723; margin-top: 5px;">
-                          <p style="color: #F23723; font-weight: 600; margin-bottom: 5px;"><i class="fa-solid fa-circle-exclamation"></i> ${isQuota ? "Quota Paused" : (isHighDemand ? "AI Mentor is heavily busy!" : "AI Mentor is taking a break!")}</p>
-                          <p style="font-size: 0.85rem; color: #a2aac2;">${isQuota ? "You've used all your free AI requests. Try again later!" : (isHighDemand ? "AI is busy. Wait 10 seconds." : error.message)}</p>
-                        </div>`;
-    textElement.innerHTML = errorHTML;
-    botMsgDiv.classList.remove("loading");
-    document.body.classList.remove("bot-responding");
-    scrollToBottom();
+    if (isQuota && typeof getLocalFallback === "function") {
+      const fallbackText = getLocalFallback(userData.message);
+      typingEffect(fallbackText, textElement, botMsgDiv);
+      chatHistory.push({ role: "model", parts: [{ text: fallbackText }] });
+    } else {
+      const errorHTML = `<div style="background: rgba(242, 55, 35, 0.1); padding: 15px; border-radius: 12px; border-left: 5px solid #F23723; margin-top: 5px;">
+                            <p style="color: #F23723; font-weight: 600; margin-bottom: 5px;"><i class="fa-solid fa-circle-exclamation"></i> ${isQuota ? "Quota Paused" : (isHighDemand ? "AI Mentor is heavily busy!" : "AI Mentor is taking a break!")}</p>
+                            <p style="font-size: 0.85rem; color: #a2aac2;">${isQuota ? "You've used all your free AI requests. Try again later!" : (isHighDemand ? "AI is busy. Wait 10 seconds." : error.message)}</p>
+                            <button onclick="document.querySelector('#api-settings-btn').click()" style="margin-top: 10px; background: #F23723; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.8rem;">Update API Key</button>
+                          </div>`;
+      textElement.innerHTML = errorHTML;
+      botMsgDiv.classList.remove("loading");
+      document.body.classList.remove("bot-responding");
+      scrollToBottom();
+    }
   } finally {
     userData.file = {};
   }
 };
+
+// API Key Management
+document.querySelector("#api-settings-btn").addEventListener("click", () => {
+  const newKey = prompt("Please enter your Gemini API Key:", localStorage.getItem("gemini_api_key") || "");
+  if (newKey !== null) {
+    localStorage.setItem("gemini_api_key", newKey);
+    API_KEY = newKey;
+    alert("API Key updated successfully!");
+    location.reload(); // Reload to apply changes cleanly
+  }
+});
 // Handle the form submission
 const handleFormSubmit = (e) => {
   e.preventDefault();
